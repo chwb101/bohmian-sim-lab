@@ -1,0 +1,6 @@
+{
+  "chat.agent.enabled": true,
+  "chat.promptFilesLocations": {
+    "prompts/**.prompt.md": true
+  }
+}
