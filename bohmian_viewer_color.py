@@ -16,6 +16,16 @@ Q_VMAX = 75                            # Maximum value for Q color scale
 EXPORT_SNAPSHOT_BUTTON = True          # Whether to show "Save Frame" button
 SHOW_POTENTIAL_OVERLAY = False         # Toggle plotting of potential contours
 
+# === Color of Bohmian Particles ====
+THRESHOLD_X = -10.335  # Threshold for initial x-position coloring. 
+                    # All particles begin with the same kinetic energy
+                    # but some have greater potential energy.  The particles
+                    # with greater total energy pass over the barrier and the  
+                    # others are caught in the quantum potential and get guided 
+                    # back.  For the variable values chosen, this division
+                    # occurs at x=-10.335.   
+                    # As a challenge try to write code to figure out this value. 
+
 # === Quantum Potential Mask Settings ===
 Q_MASK_THRESHOLD = 1e-4                # Threshold for smoothed |ψ| to include region in Q mask
 Q_SMOOTH_SIGMA = 1.5                   # Gaussian smoothing width for mask
@@ -40,6 +50,11 @@ Nt = psi.shape[2]                     # Number of time steps
 traj_data = np.load("output/bohm_trajectories.npz")
 trajectories = traj_data["trajectories"]  # Particle trajectories, shape (n_particles, Nt, 2)
 n_particles = trajectories.shape[0]
+
+
+# Determine particle colors based on initial x-position
+initial_positions = trajectories[:, 0, :]
+particle_colors = np.where(initial_positions[:, 0] < THRESHOLD_X, 'red', 'blue')
 
 # === Grid setup ===
 Ny, Nx = psi.shape[:2]
@@ -82,6 +97,7 @@ def build_clean_mask(amp, threshold=1e-8, sigma=1.0, min_area=16):
 
     return clean_mask
 
+
 # === Set up figure and layout ===
 fig = plt.figure(figsize=(7, 9))     # Overall window size (in inches)
 
@@ -104,8 +120,24 @@ ax_traj.set_ylim(YMIN, YMAX)
 ax_traj.set_aspect('auto')
 
 # Create an initially empty scatter plot for particle positions
-particle_plot, = ax_traj.plot([], [], 'o',
-    color=PARTICLE_COLOR, markersize=PARTICLE_MARKER_SIZE, alpha=PARTICLE_ALPHA)
+#particle_plot, = ax_traj.plot([], [], 'o',
+#    color=PARTICLE_COLOR, markersize=PARTICLE_MARKER_SIZE, alpha=PARTICLE_ALPHA)
+
+# Dummy initial positions (will be replaced immediately)
+# Dummy initial positions (to match number of particles for coloring)
+initial_dummy_positions = np.zeros((n_particles, 2))
+
+particle_plot = ax_traj.scatter(initial_dummy_positions[:, 0],
+                                initial_dummy_positions[:, 1],
+                                s=PARTICLE_MARKER_SIZE**2,
+                                c=particle_colors,
+                                alpha=PARTICLE_ALPHA)
+
+# Hide particles until animation starts
+particle_plot.set_offsets(np.empty((0, 2)))
+
+
+
 particle_plot.set_visible(True)
 
 # === |ψ| panel ===
@@ -161,7 +193,11 @@ def update_frame(t):
     #print(f"Rendering Q at t = {t} (t_phys = {time[t]:.4f})")
 
     # Update particles
-    particle_plot.set_data(trajectories[:, t, 0], trajectories[:, t, 1])
+    #particle_plot.set_data(trajectories[:, t, 0], trajectories[:, t, 1])
+
+    particle_plot.set_offsets(trajectories[:, t, :])
+
+
     ax_traj.set_title(f"Bohmian Trajectories (N = {n_particles}) at t = {time[t]:.2f}")
 
     # Update |ψ|
