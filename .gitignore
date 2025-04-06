@@ -3,4 +3,6 @@ output/
 exports/
 *.npz
 *.mp4
+*.csv
+*.npy
 *.png
