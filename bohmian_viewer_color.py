@@ -201,8 +201,26 @@ def on_save_clicked(event):
     frame_idx = int(slider.val)
     os.makedirs("exports", exist_ok=True)
     filename = f"exports/bohm_snapshot_t{frame_idx:04d}.png"
-    fig.savefig(filename, dpi=200)
+
+    # Temporarily hide UI controls
+    ax_slider.set_visible(False)
+    ax_button.set_visible(False)
+    if EXPORT_SNAPSHOT_BUTTON:
+        ax_save.set_visible(False)
+
+    # Force redraw to remove controls
+    fig.canvas.draw()
+
+    # Save tightly cropped figure
+    fig.savefig(filename, dpi=200, bbox_inches='tight', pad_inches=0.05)
     print(f"Saved snapshot to {filename}")
+
+    # Restore UI visibility
+    ax_slider.set_visible(True)
+    ax_button.set_visible(True)
+    if EXPORT_SNAPSHOT_BUTTON:
+        ax_save.set_visible(True)
+
 
 if EXPORT_SNAPSHOT_BUTTON:
     save_button.on_clicked(on_save_clicked)
